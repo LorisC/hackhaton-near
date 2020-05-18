@@ -84,4 +84,8 @@ impl TrackerFactory {
             .then(create_tracker_account)
             .then(add_tracker_to_account);
     }
+
+    pub fn get_tracker_created(&self)->Vec<String>{
+        self.tracker_created.to_vec()
+    }
 }
