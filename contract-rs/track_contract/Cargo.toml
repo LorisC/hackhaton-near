@@ -1,0 +1,27 @@
+[package]
+name = "track_trash"
+version = "0.1.0"
+authors = ["Loris Ciprin <loris@ciprin.fr>"]
+edition = "2018"
+
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = { version = "1.0.100", features = ["derive"] }
+serde_json = "1.0.40"
+near-sdk = "0.9.2"
+borsh = "*"
+wee_alloc = { version = "0.4.5", default-features = false, features = [] }
+
+[profile.release]
+codegen-units = 1
+# Tell `rustc` to optimize for small code size.
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+
+[workspace]
+members = []
