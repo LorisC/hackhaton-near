@@ -1,10 +1,12 @@
 import Vue from 'vue'
 import App from './App.vue'
 import * as nearAPI from "near-api-js";
+import './plugins/element.js'
+import {CONTRACT_NAME} from "./constants/Constants";
 
 Vue.config.productionTip = false
 
-const CONTRACT_NAME = "tracker_factory.testnet";
+
 
 async function initNear() {
     const nearConfig = {
@@ -14,13 +16,14 @@ async function initNear() {
         walletUrl: 'https://wallet.nearprotocol.com',
     };
     const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
+    Vue.prototype.$contractName = CONTRACT_NAME;
     Vue.prototype.$nearAPI = nearAPI;
     Vue.prototype.$near = await nearAPI.connect(Object.assign({keyStore, deps: {keyStore}}, nearConfig));
     Vue.prototype.$wallet = new nearAPI.WalletConnection(Vue.prototype.$near);
     const account = new nearAPI.Account(Vue.prototype.$near.connection, CONTRACT_NAME);
     Vue.prototype.$trackerFactoryContract = new nearAPI.Contract(account, CONTRACT_NAME, {
-        viewMethods: ['get_tracker_created'],
-        changeMethods: ['create_tracker'],
+        viewMethods: ['get_tracker_created', "get_nb_green_companies", "get_nb_accounts"],
+        changeMethods: ['create_tracker', 'register', "get_green_companies", "get_company_info"],
         sender: Vue.prototype.$wallet.getAccountId()
     });
 }
