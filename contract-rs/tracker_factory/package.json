@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "rm -rf res && mkdir res && RUSTFLAGS='-C link-arg=-s --verbose' cargo build --target wasm32-unknown-unknown --release && cp target/wasm32-unknown-unknown/release/tracker_factory.wasm res/",
+    "deploy": "near deploy --wasm_file res/tracker_factory.wasm --accountId tracker_factory.testnet",
+    "init": " near call tracker_factory.testnet new  --account_id tracker_factory.testnet ",
     "test": "cargo test --package tracker_factory --lib"
   },
   "keywords": [],
