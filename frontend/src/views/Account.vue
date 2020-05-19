@@ -54,7 +54,7 @@
                 });
 
                 this.registering = false;
-                this.registered = true;
+                this.$store.commit('set_registered', true);
             },
             async track(form) {
                 this.trackingTrash = true;

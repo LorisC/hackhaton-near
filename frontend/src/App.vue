@@ -53,18 +53,19 @@
                 for (let tracker_id of trackers) {
 
                     const contract = new this.$nearAPI.Contract(account, tracker_id, {
-                        viewMethods: ['get_owner', "get_location", "get_weight", "get_type",],
+                        viewMethods: ['get_owner', "get_location", "get_weight", "get_type", "get_info"],
                         changeMethods: ['transfer_ownership', 'change_location', "transform", "get_transformation_by_owner", "get_owners"],
                         sender: this.$wallet.getAccountId()
                     });
 
                     this.contracts[tracker_id] = contract;
+                    let tracker_info = await contract.get_info();
                     this.trackers[tracker_id] = {
                         tracker_id,
-                        owner: await contract.get_owner(),
-                        location: await contract.get_location(),
-                        weight: await contract.get_weight(),
-                        type: await contract.get_type()
+                        owner: tracker_info[0],
+                        location: tracker_info[1],
+                        weight: tracker_info[2],
+                        type: tracker_info[3],
                     }
                 }
 
@@ -96,7 +97,7 @@
                await this.init()
            }
            catch (e) {
-               alert("Something bad happen refresh the page");
+               alert("An error happen while loading the contract refresh the page please.");
                throw e;
            }
         }

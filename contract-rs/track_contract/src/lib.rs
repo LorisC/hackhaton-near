@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, AccountId};
-use near_sdk::collections::{Set, Map};
+use near_sdk::collections::{Set, Map, Vector};
 
 
 #[global_allocator]
@@ -81,6 +81,17 @@ impl TrackTrash {
 
     pub fn get_owners(&self) -> Vec<String> {
         self.transformation_by_owner.keys().collect()
+    }
+
+    pub fn get_info(&self) -> Vec<String>{
+        let mut vec = Vec::new();
+
+        vec.push( self.owner.clone());
+        vec.push(self.location.clone());
+        vec.push(self.weight.to_string());
+        vec.push(self.trash_type.clone());
+
+        vec
     }
 }
 
