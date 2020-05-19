@@ -3,9 +3,9 @@ import App from './App.vue'
 import * as nearAPI from "near-api-js";
 import './plugins/element.js'
 import {CONTRACT_NAME} from "./constants/Constants";
+import router from './router'
 
 Vue.config.productionTip = false
-
 
 
 async function initNear() {
@@ -23,7 +23,10 @@ async function initNear() {
     const account = new nearAPI.Account(Vue.prototype.$near.connection, CONTRACT_NAME);
     Vue.prototype.$trackerFactoryContract = new nearAPI.Contract(account, CONTRACT_NAME, {
         viewMethods: ['get_tracker_created', "get_nb_green_companies", "get_nb_accounts"],
-        changeMethods: ['create_tracker', 'register', "get_green_companies", "get_company_info"],
+        changeMethods: [
+            'create_tracker', 'register', "get_green_companies",
+            "get_company_info", "get_account_tracker", "is_registered",
+        ],
         sender: Vue.prototype.$wallet.getAccountId()
     });
 }
@@ -31,7 +34,8 @@ async function initNear() {
 initNear().then(() => {
 
     new Vue({
-        render: h => h(App),
+        router,
+        render: h => h(App)
     }).$mount('#app');
 
-})
+});

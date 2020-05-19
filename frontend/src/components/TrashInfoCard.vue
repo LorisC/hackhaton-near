@@ -22,11 +22,14 @@
         components: {PurchaseInfoDialog},
         data() {
             return {
-                displayPriceSetting: false
+                displayPriceSetting: false,
             }
         },
         props: {
-            tracker: {}
+            tracker: {
+                type: Object,
+                required: true
+            }
         }
     }
 </script>

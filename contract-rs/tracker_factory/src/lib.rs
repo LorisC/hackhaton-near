@@ -10,7 +10,11 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Account {
-    trackers: Set<AccountId>
+    address: String,
+    contact: String,
+    description: String,
+    name: String,
+    trackers: Set<AccountId>,
 }
 
 impl Default for Account {
@@ -20,9 +24,17 @@ impl Default for Account {
 }
 
 impl Account {
-    pub fn new(account_id: AccountId) -> Self {
+    pub fn new(account_id: AccountId,
+               address: String,
+               contact: String,
+               description: String,
+               name: String, ) -> Self {
         Self {
-            trackers: Set::new(account_id.into_bytes())
+            address,
+            contact,
+            description,
+            name,
+            trackers: Set::new(account_id.into_bytes()),
         }
     }
 
@@ -81,10 +93,12 @@ impl TrackerFactory {
                           location: Location,
                           weight: u64,
                           trash_type: String, ) -> AccountId {
+        assert!(self.is_registered(env::predecessor_account_id()), "Account not registered");
         let tracker_id = format!("{}1.{}", self.tracker_created.len(), env::current_account_id());
         self.tracker_created.insert(&String::from(&tracker_id.clone()));
 
         let mut account = self.get_account(env::predecessor_account_id());
+
         account.add_tracker(tracker_id.clone());
         self.set_account(env::predecessor_account_id(), account);
 
@@ -115,26 +129,42 @@ impl TrackerFactory {
         account.unwrap().get_trackers()
     }
 
-    pub fn get_account_nb_tracker(&self, account_id : AccountId) -> u64{
+    pub fn get_account_nb_tracker(&self, account_id: AccountId) -> u64 {
         self.get_account(account_id).trackers.len()
     }
 
-    pub fn get_nb_accounts(&self) ->u64 {
+    pub fn get_nb_accounts(&self) -> u64 {
         self.accounts.len()
     }
 
+    pub fn is_registered(&self, account_id: AccountId) -> bool {
+        self.accounts.get(&account_id.clone()).is_some()
+    }
+
+    pub fn register(&mut self, address: String,
+                    contact: String,
+                    description: String,
+                    name: String) {
+        let opt = self.accounts.get(&env::predecessor_account_id());
+        assert!(opt.is_none(), "Account already created");
+        let account = Account::new(env::predecessor_account_id(), address, contact, description, name);
+        self.accounts.insert(&env::predecessor_account_id(), &account);
+    }
 }
-impl TrackerFactory{
+
+
+impl TrackerFactory {
     fn get_account(&self, account_id: AccountId) -> Account {
         let opt = self.accounts.get(&account_id.clone());
         if opt.is_none() {
-            return Account::new(account_id)
+            return Account::new(account_id, String::from(""), String::from(""), String::from(""), String::from(""));
         }
         opt.unwrap()
     }
-    fn set_account(&mut self ,account_id: AccountId, account: Account){
+    fn set_account(&mut self, account_id: AccountId, account: Account) {
         self.accounts.insert(&account_id, &account);
     }
+
 }
 
 #[cfg(not(target_arch = "wasm32"))]
