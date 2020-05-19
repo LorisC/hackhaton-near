@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, AccountId, Promise};
-use near_sdk::collections::{Set, Map};
+use near_sdk::collections::{Set, Map, Vector};
 use serde::Serialize;
 
 const SINGLE_CALL_GAS: u64 = 100000000000000;
@@ -9,12 +9,43 @@ const SINGLE_CALL_GAS: u64 = 100000000000000;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[derive(BorshDeserialize, BorshSerialize)]
+pub struct BuyingRequest {
+    sender: AccountId,
+    price: u64,
+    why: String,
+    tracker_id: AccountId,
+}
+
+
+impl Default for BuyingRequest {
+    fn default() -> Self {
+        panic!("request not initialized");
+    }
+}
+
+impl BuyingRequest {
+    pub fn new(sender: AccountId,
+               price: u64,
+               why: String,
+               tracker_id: AccountId) -> Self {
+        Self {
+            tracker_id,
+            sender,
+            price,
+            why,
+        }
+    }
+}
+
+
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct Account {
     address: String,
     contact: String,
     description: String,
     name: String,
     trackers: Set<AccountId>,
+    buying_request: Vector<BuyingRequest>,
 }
 
 impl Default for Account {
@@ -34,7 +65,8 @@ impl Account {
             contact,
             description,
             name,
-            trackers: Set::new(account_id.into_bytes()),
+            trackers: Set::new(account_id.clone().into_bytes()),
+            buying_request: Vector::new(format!("{}.{}", account_id.clone(), env::current_account_id()).into_bytes()),
         }
     }
 
@@ -45,8 +77,46 @@ impl Account {
     pub fn add_tracker(&mut self, tracker: AccountId) {
         self.trackers.insert(&tracker.clone());
     }
-}
 
+    pub fn add_buying_request(&mut self, sender: AccountId, price: u64, why: String, tracker_id: AccountId) {
+        self.buying_request.push(&BuyingRequest::new(sender, price, why, tracker_id));
+    }
+
+    pub fn remove_buying_request(&mut self, sender: AccountId, tracker_id: AccountId) {
+        let mut remove_index = 0;
+        for i in 0..self.buying_request.len() {
+            if self.buying_request.get(i).unwrap().tracker_id == tracker_id && sender == sender {
+                remove_index = i;
+                break;
+            }
+        }
+        self.buying_request.swap_remove(remove_index);
+    }
+
+    pub fn to_vec(&self) -> Vec<String> {
+        let mut vec = Vec::new();
+
+        vec.push(self.address.clone());
+        vec.push(self.contact.clone());
+        vec.push(self.description.clone());
+        vec.push(self.name.clone());
+
+        vec
+    }
+
+    pub fn get_buy_request(&self) -> Vec<String>{
+        let mut vec = Vec::new();
+
+        for i in 0..self.buying_request.len()  {
+            let request = self.buying_request.get(i).unwrap();
+            vec.push(request.tracker_id);
+            vec.push(request.sender);
+            vec.push(request.why);
+            vec.push(request.price.to_string());
+        };
+        vec
+    }
+}
 
 pub type Location = String;
 
@@ -150,8 +220,29 @@ impl TrackerFactory {
         let account = Account::new(env::predecessor_account_id(), address, contact, description, name);
         self.accounts.insert(&env::predecessor_account_id(), &account);
     }
-}
 
+    pub fn get_account_info(&self, account_id: AccountId) -> Vec<String> {
+        assert!(self.is_registered(account_id.clone()), "Not a valid account");
+        self.get_account(account_id).to_vec()
+    }
+
+    pub fn request_buying(&mut self, from: AccountId, buyer: AccountId, price: u64, why: String, tracker_id: AccountId) {
+        assert!(self.is_registered(from.clone()));
+        let mut account = self.get_account(from.clone());
+        account.buying_request.push(&BuyingRequest::new(buyer, price, why, tracker_id));
+    }
+
+    pub fn cancel_buying_request(&mut self, from: AccountId, sender: AccountId, tracker_id: AccountId) {
+        assert!(self.is_registered(from.clone()));
+        let mut account = self.get_account(from.clone());
+        account.remove_buying_request(sender, tracker_id);
+    }
+
+    pub fn get_buy_request(&mut self) -> Vec<String>{
+        assert!(self.is_registered(env::predecessor_account_id()));
+        self.get_account(env::predecessor_account_id()).get_buy_request()
+    }
+}
 
 impl TrackerFactory {
     fn get_account(&self, account_id: AccountId) -> Account {
@@ -164,8 +255,8 @@ impl TrackerFactory {
     fn set_account(&mut self, account_id: AccountId, account: Account) {
         self.accounts.insert(&account_id, &account);
     }
-
 }
+
 
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]

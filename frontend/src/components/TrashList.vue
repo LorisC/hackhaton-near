@@ -1,10 +1,9 @@
 <template>
-    <el-card :style="{width: '450px'}" v-loading="loading">
-        <i class="el-icon-refresh" @click="$emit('refresh')"></i>
-        <div v-if="trackers.length > 0">
+    <el-card :style="{width: '450px'}">
+        <div v-if="trackersArray.length > 0">
             <trash-info-card
                     class="trash_card"
-                    v-for="(tracker, index) in trackers"
+                    v-for="(tracker, index) in trackersArray"
                     :key="tracker.owner + tracker.location + tracker.weight + tracker.trash_type + index"
                     :tracker="tracker"
             />
@@ -20,58 +19,32 @@
     export default {
         name: 'trash-list',
         components: {TrashInfoCard},
-        data(){
-            return {
-                trackers: [],
-                contracts: {},
-            };
-        },
+
         props: {
-            trackers_id: {
-                type: Array,
-                default(){
-                    return []
+            trackers: {
+                type: Object,
+                default() {
+                    return {}
                 }
             },
-            account: {
-                type: Object,
-                required: true,
-            },
-            loading: {
-                type: Boolean,
-                required: true
+        },
+        computed: {
+            trackersArray() {
+                const trackers = [];
+                for (let key in this.trackers) {
+                    trackers.push(this.trackers[key])
+                }
+                return trackers;
             }
         },
-        methods:{
-            async fetch_tracker_info(){
-               for (let tracker_id of this.trackers_id){
-                   const contract = new this.$nearAPI.Contract(this.account, tracker_id, {
-                       viewMethods: ['get_owner', "get_location", "get_weight", "get_type", ],
-                       changeMethods: ['transfer_ownership', 'change_location', "transform", "get_transformation_by_owner", "get_owners"],
-                       sender: this.$wallet.getAccountId()
-                   });
-
-                   this.trackers.push({
-                       tracker_id,
-                       owner: await contract.get_owner(),
-                       location: await contract.get_location(),
-                       weight: await contract.get_weight(),
-                       type: await contract.get_type()
-                   });
-
-                   this.contracts[tracker_id] = contract
-               }
-            }
-        },
-        async mounted() {
-            console.log(this.trackers_id, 'dasdasdasda');
-            await this.fetch_tracker_info();
+        mounted() {
+            console.log(this.trackers);
         }
 
     }
 </script>
 <style>
-    .trash_card{
+    .trash_card {
         padding-bottom: 10px;
     }
 </style>

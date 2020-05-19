@@ -4,6 +4,7 @@ import * as nearAPI from "near-api-js";
 import './plugins/element.js'
 import {CONTRACT_NAME} from "./constants/Constants";
 import router from './router'
+import store from './store'
 
 Vue.config.productionTip = false
 
@@ -26,6 +27,7 @@ async function initNear() {
         changeMethods: [
             'create_tracker', 'register', "get_green_companies",
             "get_company_info", "get_account_tracker", "is_registered",
+            "get_account_info"
         ],
         sender: Vue.prototype.$wallet.getAccountId()
     });
@@ -35,6 +37,7 @@ initNear().then(() => {
 
     new Vue({
         router,
+        store,
         render: h => h(App)
     }).$mount('#app');
 
